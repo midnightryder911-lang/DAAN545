@@ -1,0 +1,103 @@
+Nelson Mark – Lesson 4 Coding Exercise Report
+Course: DAAN 545
+Lesson 4: Coding Exercise
+
+================================================================================
+1. TITLE PAGE
+================================================================================
+
+Multivariate OHLCV Time Series Cleaning and Exploratory Data Analysis
+
+Mark Nelson
+DAAN 545
+Lesson 4 Coding Exercise
+
+================================================================================
+2. DATASET OVERVIEW
+================================================================================
+
+The dataset is composed of OHLCV (open, high, low, close, volume) 5-minute candle data for seven crypto assets, forming a multivariate time series. The seven symbols are ADAUSD, BNBUSDT, BTCUSD, DOGEUSDT, ETHUSD, SOLUSDT, and XRPUSD. Each asset was supplied as a separate CSV; the pipeline merged them into a single aligned table keyed by timestamp for joint analysis and visualization.
+
+================================================================================
+3. DATA PREPROCESSING & CLEANING
+================================================================================
+
+Merge method. I merged the seven asset series using an outer join on timestamp so that every bar present in any asset is retained. The merged result was then reindexed to a full 5-minute calendar grid over the observed time range. This alignment ensures a regular time index with no gaps; bars missing for a given asset appear as missing values in that asset’s columns rather than as omitted rows.
+
+Missing values. Missingness was identified from the reindexed grid: any OHLCV cell that was absent after the merge is treated as missing. I added boolean “was missing” flags for each OHLCV column so that filled values can be distinguished from originally observed ones. For OHLC columns I used forward fill followed by backward fill to bridge gaps. For volume I filled missing values with zero. After this step, there are no remaining missing cells in the OHLCV columns.
+
+Normalization. I normalized each asset’s close series to start at 1.0 by dividing by the first valid close. This preserves returns but makes it easier to compare price paths across assets with different price levels on a single chart.
+
+Outliers. I computed log returns from the close series and flagged outliers using a z-score threshold of 5.0 on those returns. Observations with absolute z-score above 5 were marked in a separate flag column; no points were removed. The analysis therefore keeps all data while identifying extreme returns.
+
+================================================================================
+4. SUMMARY STATISTICS OBSERVATIONS
+================================================================================
+
+The cleaned dataset has 4,608 rows and 52 columns. The time window runs from 2023-08-10 00:00:00 UTC to 2023-08-25 23:55:00 UTC. Before filling, 690 rows had at least one missing OHLCV value and there were 3,482 missing cells in total across the OHLCV columns. After the fill step, missing cells in those columns are zero (missing_cells_after_fill = 0).
+
+I used the pipeline’s close_stats and return_stats (from the summary output) to inspect per-asset levels and volatility. Close stats describe each asset’s close price range and spread over the window; return stats describe the distribution of log returns (mean, standard deviation, min, max). These summaries helped me interpret the scale of each series and the magnitude of returns before looking at the plots. I did not list every number here; the key point is that the dataset is fully filled, aligned to a 5-minute grid, and summarized in a structured way for reporting.
+
+Outlier counts from the z-score flags (threshold 5) per symbol are: ADAUSD 10, BNBUSDT 16, BTCUSD 4, DOGEUSDT 9, ETHUSD 5, SOLUSDT 9, XRPUSD 8. So BNBUSDT had the most flagged return outliers in this run; BTCUSD and ETHUSD had fewer.
+
+================================================================================
+5. VISUALIZATION FINDINGS
+================================================================================
+
+I generated and saved all figures to the outputs folder. Below I reference them by filename and state concrete observations that these plot types support, without inventing correlation values.
+
+close_trends.png. This plot shows raw close prices for the default symbols (e.g., BTCUSD, ETHUSD, SOLUSDT, XRPUSD) over the two-week window. I observed that price levels differ greatly across assets (e.g., BTC in the tens of thousands vs. smaller units for others), so comparing “direction” is easier when using the normalized view.
+
+close_trends_normalized.png. Each series is normalized to start at 1.0. I used this to compare relative performance: which assets moved up or down more relative to their own start, and how paths aligned or diverged over time. Over this short window, the normalized plot makes it easier to see which symbols were relatively stronger or weaker.
+
+hist_*_returns.png and box_*_returns.png. There is one histogram and one boxplot per asset’s log returns (e.g., hist_BTCUSD_returns.png, box_ETHUSD_returns.png). I observed that return distributions are centered near zero for all assets, with most mass in the middle and a few large positive or negative values. The boxplots show that some assets have more extreme tails or more outliers than others, consistent with the outlier counts (e.g., BNBUSDT with 16 vs. BTCUSD with 4).
+
+returns_corr_heatmap.png. This heatmap shows pairwise correlations of the seven assets’ log-return series. I used it to see which pairs tend to move together or in opposite directions. In typical crypto data, BTC and ETH often show positive correlation; other pairs can be positive, negative, or weak. I did not report specific correlation coefficients here; the heatmap supports qualitative interpretation of comovement over this window.
+
+================================================================================
+6. LIMITATIONS / ASSUMPTIONS
+================================================================================
+
+Filling missing OHLC with forward and backward fill can smooth over gaps and may understate volatility or autocorrelation in thin periods. Filling volume with zero assumes that “missing” corresponds to no trading, which may not hold if data were sometimes unreported. Outliers were only flagged, not removed, so any downstream analysis that is sensitive to extremes still sees those points unless the user explicitly filters or winsorizes using the flags. The analysis covers a short window (August 10–25, 2023), so findings about correlations and tail behavior are specific to this period and may not generalize.
+
+================================================================================
+7. CONCLUSION
+================================================================================
+
+I ran a full cleaning and EDA pipeline on multivariate OHLCV 5-minute data for seven crypto assets. The pipeline merged the series on a common timestamp, aligned to a full 5-minute grid, handled missing values with explicit flags and fill rules, normalized closes to 1.0 for comparison, and flagged return outliers at z = 5 without removal. The result is a 4,608-row, 52-column dataset with no missing OHLCV cells and a clear audit trail (missing counts, outlier counts). The visualizations (close trends, normalized trends, return histograms and boxplots, and correlation heatmap) support interpretation of levels, relative performance, return distributions, and comovement. I learned how important a consistent time index and transparent missing-value and outlier handling are when cleaning and exploring multivariate financial time series.
+
+================================================================================
+8. APPENDIX: OUTPUT FILES (18 TOTAL)
+================================================================================
+
+Grouped by type:
+
+Close trend plots (2):
+  close_trends.png
+  close_trends_normalized.png
+
+Return histograms (7):
+  hist_ADAUSD_returns.png
+  hist_BNBUSDT_returns.png
+  hist_BTCUSD_returns.png
+  hist_DOGEUSDT_returns.png
+  hist_ETHUSD_returns.png
+  hist_SOLUSDT_returns.png
+  hist_XRPUSD_returns.png
+
+Return boxplots (7):
+  box_ADAUSD_returns.png
+  box_BNBUSDT_returns.png
+  box_BTCUSD_returns.png
+  box_DOGEUSDT_returns.png
+  box_ETHUSD_returns.png
+  box_SOLUSDT_returns.png
+  box_XRPUSD_returns.png
+
+Correlation heatmap (1):
+  returns_corr_heatmap.png
+
+Summary data (1):
+  summary.json
+
+All files were written to the outputs/ directory.
