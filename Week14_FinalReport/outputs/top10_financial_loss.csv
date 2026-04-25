@@ -1,0 +1,11 @@
+feature,importance
+ocsvm_score,0.22183156981092844
+knn_distance_score,0.16457059858662262
+Number of Affected Users,0.1520577696971869
+Year,0.07163428362866395
+Country_USA,0.012660616358587774
+Attack Source_Insider,0.012586439793714734
+Attack Type_Malware,0.012519713874808876
+Security Vulnerability Type_Weak Passwords,0.012170572082727303
+Defense Mechanism Used_Encryption,0.012111788800332158
+Defense Mechanism Used_Antivirus,0.011957701817362726

@@ -1,0 +1,99 @@
+#!/usr/bin/env python3
+"""
+DAAN 545 – Data Mining: Final Project
+
+Writes Section 3 (Feature Importance Analysis and Insights) to a text file
+under ./outputs/ for submission and team sharing.
+"""
+
+from pathlib import Path
+
+# Output directory and file (relative to script location or cwd when run).
+OUTPUT_DIR = Path("./outputs")
+REPORT_FILENAME = "Section_3_Feature_Importance_Report.txt"
+
+# Finalized Section 3 body: figure placeholders, captions, humanized tone, limitation sentence.
+SECTION_3_REPORT = r"""
+### Section 3: Feature Importance Analysis and Insights
+
+#### A. Introduction
+We use feature importance analysis to answer a question that matters as much as raw prediction accuracy: **which variables the models lean on when they try to explain cyber outcomes.** Our Random Forest models target three outcomes—**Financial Loss** (regression), **Incident Resolution Time** (regression), and **Incident Severity** (classification)—and we pair global importance rankings with **SHAP** so we can talk about both overall drivers and incident-level behavior. The point is not to oversell forecasting in a messy domain; it is to extract defensible signals we can connect back to how organizations detect, triage, and respond to incidents.
+
+#### B. Model Performance Overview
+Before we interpret features, we need to be straight about performance. On the holdout split, **Financial Loss** had a very low test R² (about **0.02**), with 5-fold cross-validation mean R² also around **0.02**. **Resolution Time** looked worse: test R² was slightly **negative** (about **-0.03**), and 5-fold CV mean R² was near **-0.01**—essentially "not much better than guessing the mean," and in one view slightly worse. **Incident Severity** landed in the mid-**40%** accuracy range on both test and CV (about **47%** test, **45%** CV mean).
+
+Those numbers tell us something important about the problem itself. Cyber outcomes are shaped by nonlinear interactions, heavy tails, and a lot of **unobserved context** (internal staffing, tooling, vendor dependencies, legal timelines, and executive decisions). When those pieces are missing from the table, models often struggle to explain variance even when the dataset still contains meaningful partial signals. These results suggest that important drivers such as organizational response maturity, internal security posture, and incident handling processes are not captured in the dataset, limiting predictive performance.
+
+So we are careful with language: **weak fit is not the same as "nothing to learn."** It means the models are working in a hard setting—and that makes interpretability tools even more valuable, because they tell us what the model is actually using when it does make a prediction.
+
+#### C. Key Feature Importance Findings
+Random Forest feature importance is a **global** measure: it reflects how much each input tends to reduce impurity across trees when the forest is trained to predict the target. It does not replace causal reasoning, but it is a disciplined way to surface which engineered signals consistently matter.
+
+[Insert Figure 3.1: Feature Importance for Financial Loss]
+
+**Figure 3.1: Feature Importance for Financial Loss (Random Forest Regressor)**
+This figure shows that anomaly-based features (ocsvm_score, knn_distance_score) and incident scale (Number of Affected Users) dominate model behavior, indicating that extreme and high-impact events are the primary drivers of financial loss. It matters because it aligns model behavior with how security teams intuitively prioritize incidents—unusual signals and broad blast radius tend to precede expensive outcomes.
+
+As shown in Figure 3.1, the ranking is not subtle: **anomaly scores** sit at the top, followed closely by **affected users**, with **Year** also showing up as a meaningful contributor. We read that pattern as "tail risk + scale + time-era effects." High-dollar incidents are rarely "average," and large user impact expands remediation, communications, and downstream costs.
+
+[Insert Figure 3.2: Feature Importance for Resolution Time]
+
+**Figure 3.2: Feature Importance for Incident Resolution Time (Random Forest Regressor)**
+This figure shows that the same anomaly and scale features remain among the strongest predictors even though resolution-time R² is weak, which highlights that the model is still anchoring on consistent signals even when it cannot fully explain timing. That matters because resolution time is often driven by invisible process factors; the figure helps separate "what we can see in the data" from "what we cannot measure."
+
+As shown in Figure 3.2, the overlap with Figure 3.1 is the headline: **we do not get a totally new story just because the target changed.** That consistency is actually reassuring from an analysis standpoint—if the top features flipped randomly between models, we would worry about instability or overfitting to noise. Here, the models keep returning to the same handful of drivers, which pushes us toward a substantive interpretation rather than a one-off artifact.
+
+[Insert Figure 3.3: Feature Importance for Incident Severity]
+
+**Figure 3.3: Feature Importance for Incident Severity (Random Forest Classifier)**
+This figure shows that severity classification still leans heavily on anomaly scores and user impact, echoing the regression models despite different labels and metrics. It matters because it suggests the dataset's strongest measurable structure is not "severity-specific magic features," but cross-cutting risk dimensions like unusualness and scope.
+
+As shown in Figure 3.3, the cross-model agreement is the real punchline: **financial loss, resolution burden, and severity labels all seem to orbit the same underlying risk geometry** in this dataset—anomalies and scale rise to the top again and again.
+
+#### D. Connection to Outlier Analysis
+ocsvm_score and knn_distance_score are not generic "extra columns"; they are **anomaly-oriented summaries** tied to the outlier-detection work elsewhere in our report. When those features dominate supervised models, it is a quantitative way of saying what analysts already suspect: **cybersecurity outcomes are often driven by extreme cases**, not by the median incident.
+
+That dovetails with our earlier outlier-focused discussion and figures: the tails are where the pain concentrates. In practice, that means anomaly outputs are not just a preprocessing curiosity—they are aligned with the kinds of incidents that show up as costly, slow, or severe when we try to model outcomes directly.
+
+#### E. SHAP Interpretation
+Feature importance answers "what matters overall," but SHAP pushes us toward "**how** did this row move the prediction?" SHAP values attribute each prediction to contributions from individual features, which is closer to how incident reviews actually happen—case by case, with questions about what looked unusual and what expanded impact.
+
+[Insert Figure 3.4: SHAP Summary Plot for Financial Loss]
+
+**Figure 3.4: SHAP Summary Plot for Financial Loss (Random Forest Regressor)**
+This figure summarizes how feature values relate to higher or lower predicted loss across many incidents, not just a single ranked list. It matters because it improves interpretability and trust: we can show stakeholders that the model's behavior is tied to concrete signals (especially anomaly and scale) rather than opaque "black box" scoring.
+
+As shown in Figure 3.4, SHAP gives us a bridge from global importance to **operational explainability**—the kind of transparency that matters when model outputs might inform prioritization, even if we are not pretending the model forecasts dollars perfectly.
+
+#### F. Practical Implications
+So what does this mean in practice—without overstating what the metrics allow?
+
+- **Risk detection / triage:** If anomaly scores are consistently at the top, then escalation rules should treat "far from normal" as a first-class signal, not a secondary curiosity. That is consistent with how SOC workflows already behave, but our results give it quantitative backing in this dataset.
+
+- **Resource allocation:** When Number of Affected Users keeps appearing near the top, early scope estimates should trigger heavier staffing, faster containment decisions, and earlier preparation for customer/regulatory workload—even if exact resolution time is hard to predict.
+
+- **Defense strategy over time:** The recurring role of Year is a nudge that static models and static playbooks age poorly; the threat environment and reporting realities shift, and our models appear sensitive to that drift.
+
+#### G. Key Takeaways
+We end where the evidence actually leaves us. The models are not strong predictors in a textbook sense—**Financial Loss** sits around **R² ≈ 0.02**, **Resolution Time** is **near-zero/negative R²**, and **Severity** is only **mid-40%** accurate—but the interpretability layer still tells a coherent story. Across targets, **anomaly features** and **user impact** rise to the top, with **time-era effects** also present. That cross-model consistency is the strongest justification for our conclusions: we are seeing a stable risk signature, not random feature noise. SHAP adds the missing piece—**directional, case-level reasoning**—so we can explain model behavior in a way that supports trust, even when prediction is hard.
+
+While predictive performance is limited, the consistency of feature importance across models suggests that anomaly detection and incident scale are structurally meaningful signals in cybersecurity data. This reinforces the value of combining unsupervised anomaly detection with supervised learning to support decision-making, even when full prediction accuracy is not achievable.
+""".strip()
+
+
+def main() -> None:
+    # Ensure the outputs directory exists so file writes never fail on a fresh clone.
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    out_path = OUTPUT_DIR / REPORT_FILENAME
+
+    # Save report section to file for final project submission and team sharing
+    with open(out_path, "w", encoding="utf-8", newline="\n") as f:
+        f.write(SECTION_3_REPORT)
+        f.write("\n")
+
+    print("Section 3 report saved successfully.")
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,11 @@
+feature,importance
+ocsvm_score,0.19069150740140411
+knn_distance_score,0.17387100712634396
+Number of Affected Users,0.16548185292841328
+Year,0.06883518786994088
+Security Vulnerability Type_Zero-day,0.01488741122774341
+Country_Brazil,0.013671633317354992
+Attack Source_Unknown,0.01362886186356612
+Security Vulnerability Type_Unpatched Software,0.013108593722544935
+Target Industry_Telecommunications,0.012298218144611264
+Target Industry_Retail,0.01207065865382182

@@ -1,0 +1,11 @@
+feature,importance
+ocsvm_score,0.17535829049355395
+Number of Affected Users,0.11742545149765139
+knn_distance_score,0.11644069632003619
+Year,0.07329758489667328
+Security Vulnerability Type_Social Engineering,0.0176373639905915
+Security Vulnerability Type_Weak Passwords,0.016607312593184514
+Security Vulnerability Type_Zero-day,0.01640015518431032
+Attack Source_Insider,0.016301596485266516
+Attack Source_Nation-state,0.015972861872066424
+Security Vulnerability Type_Unpatched Software,0.01587414044082096
